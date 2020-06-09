@@ -9,27 +9,33 @@ def lambda_handler(event, context):
     print (event)
     if "detail" in event and "state" in event["detail"] and "value" in event["detail"]["state"]:
         if event["detail"]["state"]["value"] == "OK":
+            print("[INFO] Executing Alarm recovery.")
             subnet_assoc_map = {}
             for table in client.describe_route_tables(RouteTableIds=[public_table])["RouteTables"]:
                 for assoc in table["Associations"]:
                     if "SubnetId" in assoc:
                         subnet_assoc_map.update({assoc["SubnetId"]: assoc["RouteTableAssociationId"]})
-            # print(subnet_assoc_map)
+            print(f"[INFO] Route table association ID to subnet mapping: {subnet_assoc_map} ")
             tag_response = client.describe_tags(Filters=[{'Name': 'key','Values': ['DefenceProFailBackSubnets']}, {'Name': 'resource-id', 'Values': [reals_tables[0]]}])
-            # print(response)
             if "Tags" in tag_response and "Value" in tag_response["Tags"][0]:
                 for subnet in filter(None, tag_response["Tags"][0]["Value"].split(',')):
                     if subnet in subnet_assoc_map:
-                        # print(subnet_assoc_map[subnet])
                         response = client.disassociate_route_table(AssociationId=subnet_assoc_map[subnet])
+                        if "ResponseMetadata" in response:
+                            print(f"[INFO] Successfully removed public route table association from subnet: {subnet}")
                     else:
-                        print("[ERROR] did not find RouteTableAssociationId for subnet %s" % subnet)
+                        print(f"[ERROR] did not find RouteTableAssociationId for subnet: {subnet}")
                     response = client.associate_route_table(RouteTableId=reals_tables[0], SubnetId=subnet)
+                    if "AssociationId" in response:
+                        print(f"[INFO] Successfully added DP route table association, {subnet=}, {response["AssociationId"]=}")
                 client.delete_tags(Tags=[{"Key": tag_response["Tags"][0]["Key"], "Value": tag_response["Tags"][0]["Value"]}], Resources=[reals_tables[0]])
+                print(f"[INFO] Deleted failback TAGs")
 
             igw = client.describe_internet_gateways(Filters=[{'Name': 'attachment.vpc-id','Values': [vpcid]}])
             if "InternetGatewayId" in igw["InternetGateways"][0]:
                 response = client.associate_route_table(RouteTableId=gw_tables, GatewayId=igw["InternetGateways"][0]["InternetGatewayId"])
+                if "ResponseMetadata" in response:
+                    print(f"[INFO] Successfully associated internet gateway to gateway overwrite table")
 
         elif event["detail"]["state"]["value"] == "INSUFFICIENT_DATA" or event["detail"]["state"]["value"] == "ALARM":
             # get RouteTableAssociationId
@@ -45,26 +51,26 @@ def lambda_handler(event, context):
                     for id in table["Associations"]:
                         if "SubnetId" in id and id["SubnetId"] != "":
                             response = client.disassociate_route_table(AssociationId=id["RouteTableAssociationId"])
+                            if "ResponseMetadata" in response:
+                                print(f"[INFO] Successfully removed DP route table from subnet {subnet}")
                             value=""
                             response = client.describe_tags(Filters=[{'Name': 'key','Values': ['DefenceProFailBackSubnets']}, {'Name': 'resource-id', 'Values': [real_table]}])
                             if len(response["Tags"])>0 and "Value" in response["Tags"][0]:
                                 value=response["Tags"][0]["Value"]
                                 client.delete_tags(Tags=[{"Key": response["Tags"][0]["Key"], "Value": response["Tags"][0]["Value"]}], Resources=[real_table])
                             response = ec2.create_tags(Resources=[real_table], Tags=[{'Key': 'DefenceProFailBackSubnets','Value': value+","+id["SubnetId"]}])
+                            if "ResponseMetadata" in response:
+                                print(f"[INFO] Successfully updated failback TAGs")
 
             for subnet in subnets:
                 response = client.associate_route_table(RouteTableId=public_table, SubnetId=subnet)
+            if "AssociationId" in response:
+                print(f"[INFO] Successfully added public route table, {subnet=}, {response["AssociationId"]=}")
         else:
             print(event)
     else:
         print (event)
-
-
-    # TODO implement
-    return {
-        'statusCode': 200,
-        'body': event
-    }
+    return 
 
 def fetch_ids(client):
     vpcid=""    
