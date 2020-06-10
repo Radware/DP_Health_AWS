@@ -61,7 +61,7 @@ We need to create a separate Alarm for each metric (it's recomended to set norif
 
 ## CloudWatch Rules ##
 To schedule the Detector Lambda we are going to use a schedule rule triggering the Lambda once every 10 Minutes.<br>
-For performing the acctual failover, we are going to use an additional Rule triggering Action Lambda on <b>any<b> alarm change.<br>
+For performing the acctual failover, we are going to use an additional Rule triggering Action Lambda on <b>any</b> alarm change.<br>
 
 ## Action Lambda ## 
 this Lambda is responsible for:
