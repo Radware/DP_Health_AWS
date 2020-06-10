@@ -1,5 +1,5 @@
 # DP_Health_AWS
-DefencePro Health testing for AWS.
+DefensePro Health testing for AWS.
 
 ## Table Of Contents ###
 - [Description](#description )
@@ -12,21 +12,21 @@ DefencePro Health testing for AWS.
   * [Permissions](#action-lambda-permissions)
 
 ## Description ##
-This repository holds the Lambda functions as well as their requirements for performing automatic bypass of DefencePro in AWS environment.
+This repository holds the Lambda functions as well as their requirements for performing automatic bypass of DefensePro in AWS environment.
 Before we begin, this solution assumes the following:
 * All relevant objects are in the same VPC
-* Protected objects (servers) are in a subnet which routing table points to the ENI of DefencePro - we will refer this routing table as `Reals`
-* There is a routing table with the Internet Gateway assigned as the `Edge Gateway` with a route sending the Protected objects\their entire subnet to ENI of DefencePro - we will refer this routing table as `GatewayID`
-* All Relevant route tables has a tag named `DefenceProTable`, the value represents the table type (F.E: for protected objects route table it would be `Reals`)
+* Protected objects (servers) are in a subnet which routing table points to the ENI of DefensePro - we will refer this routing table as `Reals`
+* There is a routing table with the Internet Gateway assigned as the `Edge Gateway` with a route sending the Protected objects\their entire subnet to ENI of DefensePro - we will refer this routing table as `GatewayID`
+* All Relevant route tables has a tag named `DefenseProTable`, the value represents the table type (F.E: for protected objects route table it would be `Reals`)
 
 ## Detector Lambda ##
 The code, as well as the requirements are in `Detect` folder. This Lambda is responsible for:
-1. Discovering the DefensePro devices based on a TAG `DefenceProInstance`
+1. Discovering the DefensePro devices based on a TAG `DefenseProInstance`
 2. Quarrying the DefensePro devices with an SNMP request to the MGMT interface
-3. Issue an HTTP\S query through the DefencePro 
+3. Issue an HTTP\S query through the DefensePro 
 4. Write test results to a CloudWatch Log Group.
 
-For achieving the above - this Lambda is in the same VPC as the DefencePro and the protected objects.
+For achieving the above - this Lambda is in the same VPC as the DefensePro and the protected objects.
 
 ### Detector Lambda Permissions ###
 In order to oporate the Lambda needs the following permissions:
@@ -49,7 +49,7 @@ In order to oporate the Lambda needs the following permissions:
 
 ## Metric Filter ##
 The results of the Detector Lambda are sent to Log group, to read them - we will use Metric Filter. <br>
-a Metric Filter is representing only one value for one DefencePro (F.E. the SNMP result for "DP1") .<br>
+a Metric Filter is representing only one value for one DefensePro (F.E. the SNMP result for "DP1") .<br>
 We use the Filter Pattern to narrow down the relevant logs in the following manner <br>
 `{ ($.Name = DP1) && $.SNMP_Result>=0 }`<br>
 this means we only want logs where the Name is "DP1" and `SNMP_Result` is greater or equal to 0. <br>
@@ -66,8 +66,8 @@ For performing the acctual failover, we are going to use an additional Rule trig
 ## Action Lambda ## 
 this Lambda is responsible for:
 1. discovering all relevant route tables (based on tags)
-2. replace association between Public and Protected object route table (for passing or bypassing the DefencePro)
-3. removal or association of the internet gateway from the `GatewayID` route table (for passing or bypassing the DefencePro)
+2. replace association between Public and Protected object route table (for passing or bypassing the DefensePro)
+3. removal or association of the internet gateway from the `GatewayID` route table (for passing or bypassing the DefensePro)
 
 ### Action Lambda Permissions ###
 In order to oporate the Lambda needs the following permissions:
