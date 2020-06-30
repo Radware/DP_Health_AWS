@@ -22,18 +22,16 @@ async def get_host_list():
             for interface in instance_info["Reservations"][0]["Instances"][0]["NetworkInterfaces"]:
                 if "Attachment" in interface and "DeviceIndex" in interface["Attachment"] and interface["Attachment"]["DeviceIndex"] == 1:
                     print("[INFO] Found DP with MGMT IP = " + interface["PrivateIpAddress"])
-                    # Extract URL and DP Name from TAG
-                    dpName, url = tag['Value'].split('$$DP$$')
                     # Create a task for running the tests
-                    task_list.append(asyncio.create_task(run_test(interface["PrivateIpAddress"], dpName, 'http://'+url)))
+                    task_list.append(asyncio.create_task(run_test(interface["PrivateIpAddress"], tag['Value'])))
         except Exception as e:
             print(f"[ERROR] unable to find network interface in instance info! instance ID: {tag['ResourceId']}, error: {e} ")
     # execute the test tasks 
     for task in task_list:
         await task
 
-async def run_test(host, dpName, url):
-    oid = '1.3.6.1.4.1.89.35.1.112.0'
+async def run_test(host, dpName):
+    oid = '.1.3.6.1.4.1.89.35.1.112'
     community = 'public'
     repeat = 5
     for i in range(repeat):
@@ -56,9 +54,9 @@ async def run_test(host, dpName, url):
                 print("{ \"Description\": \"DefensePro Health Keep-Alive CPU query\", \"Name\": \"%s\", \"DefensePro IP\": \"%s\", \"SNMP_Result\": %s }" % (dpName, host, str(varBinds[0][1])))
         
         # Run HTTP Test
-        async with aiohttp.ClientSession() as session:
-            scode = await fetch_HTTP_Response(session, url)
-            print("{ \"Description\": \"DefensePro Health Keep-Alive CPU query\", \"Name\": \"%s\", \"DefensePro IP\": \"%s\", \"HTTP_Result\": %s }" % (dpName, host, scode))
+#         async with aiohttp.ClientSession() as session:
+#             scode = await fetch_HTTP_Response(session, url)
+#             print("{ \"Description\": \"DefensePro Health Keep-Alive HTTP Test\", \"Name\": \"%s\", \"DefensePro IP\": \"%s\", \"HTTP_Result\": %s }" % (dpName, host, scode))
 
         if endtime > int(time.time()):
             await asyncio.sleep(endtime-int(time.time()))
