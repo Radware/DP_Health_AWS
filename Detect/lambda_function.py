@@ -42,19 +42,29 @@ async def run_test(host, dpName):
         cmdGen = cmdgen.CommandGenerator()
         errorIndication, errorStatus, errorIndex, varBinds = cmdGen.getCmd(
         cmdgen.CommunityData(community),
-        cmdgen.UdpTransportTarget((host, 161), timeout=1, retries=1),oid)
+        cmdgen.UdpTransportTarget((host, 161), timeout=0, retries=0),oid)
 
         # Check for errors and print out results
         if errorIndication:
-            print(errorIndication)
+            print(f'{{ "Description": "DefensePro Health Keep-Alive CPU query", "Name": "{dpName}", "DefensePro IP": "{host}", "SNMP Error": {errorIndication} }}')
+            response = cloudwatch.put_metric_data(
+                MetricData = [ 
+                    { 'MetricName': 'DP_KeepAlive_Timeouts', 'Dimensions': [
+                        { 'Name': 'DefensePro_Name', 'Value': dpName },
+                        { 'Name': 'DefensePro_IP', 'Value': host }
+                    ],
+                'Unit': 'None',
+                'Value': 100
+                }], Namespace = f'{dpName}_CPU' )
+
         else:
             if errorStatus:
                 print('%s at %s' % ( errorStatus.prettyPrint(),errorIndex and varBinds[int(errorIndex)-1] or '?') )
             else:
-                print("{ \"Description\": \"DefensePro Health Keep-Alive CPU query\", \"Name\": \"%s\", \"DefensePro IP\": \"%s\", \"SNMP_Result\": %s }" % (dpName, host, str(varBinds[0][1])))
+                print(f'{{ "Description": "DefensePro Health Keep-Alive CPU query", "Name": "{dpName}", "DefensePro IP": "{host}", "SNMP_Result": {str(varBinds[0][1])} }}')
                 response = cloudwatch.put_metric_data(
                     MetricData = [ 
-                        { 'MetricName': 'DP_KeepAlive', 'Dimensions': [
+                        { 'MetricName': 'DP_KeepAlive_Results', 'Dimensions': [
                             { 'Name': 'DefensePro_Name', 'Value': dpName },
                             { 'Name': 'DefensePro_IP', 'Value': host }
                         ],
