@@ -29,22 +29,26 @@ The code, as well as the requirements are in `Detect` folder. This Lambda is res
 For achieving the above - this Lambda is in the same VPC as the DefensePro and the protected objects.
 
 ### Detector Lambda Permissions ###
-In order to oporate the Lambda needs the following permissions:
+In order to oporate the Lambda needs permissions for the following operations
+* Create, Describe and Delete Network Interfaces - for being able to reside in a VPC
+* Describe Tags - for getting a list of DP instances
+* Describe Instance - for getting instance Interfaces 
+* Put Metric Data - for posting results into CloudWatch Metrics
+
 ```
-        "Action": [
-            "ec2:CreateNetworkInterface",
-            "ec2:DescribeInstances",
-            "ec2:DescribeNetworkInterfaces",
-            "ec2:DescribeTags",
-            "ec2:DeleteNetworkInterface"
-        ], "Resource": "*"
-    }, {
-        "Action": [
-            "logs:CreateLogStream",
-            "logs:PutLogEvents"
-        ], "Resource": "arn:aws:logs:us-east-2:334049999223:log-group:/aws/lambda/dp_ha_detect_v2:*"
-    }, 
-    { "Action": "logs:CreateLogGroup", "Resource": "arn:aws:logs:us-east-2:334049999223:*" } 
+        {
+            "Sid": "VisualEditor0",
+            "Effect": "Allow",
+            "Action": [
+                "ec2:CreateNetworkInterface",
+                "ec2:DescribeInstances",
+                "ec2:DescribeNetworkInterfaces",
+                "ec2:DescribeTags",
+                "ec2:DeleteNetworkInterface",
+                "cloudwatch:PutMetricData"
+            ],
+            "Resource": "*"
+        },
 ```
 
 ## Metric Filter ##
