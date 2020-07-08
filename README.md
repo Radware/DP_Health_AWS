@@ -29,12 +29,13 @@ The code, as well as the requirements are in `Detect` folder. This Lambda is res
 For achieving the above - this Lambda is in the same VPC as the DefensePro and the protected objects.
 
 ### Detector Lambda Permissions ###
-In order to oporate the Lambda needs permissions for the following operations
+The Lambda needs permissions for the following operations
 * Create, Describe and Delete Network Interfaces - for being able to reside in a VPC
 * Describe Tags - for getting a list of DP instances
 * Describe Instance - for getting instance Interfaces 
 * Put Metric Data - for posting results into CloudWatch Metrics
 
+the following should be included into IAM policy Statements
 ```
         {
             "Sid": "VisualEditor0",
@@ -50,14 +51,6 @@ In order to oporate the Lambda needs permissions for the following operations
             "Resource": "*"
         },
 ```
-
-## Metric Filter ##
-The results of the Detector Lambda are sent to Log group, to read them - we will use Metric Filter. <br>
-a Metric Filter is representing only one value for one DefensePro (F.E. the SNMP result for "DP1") .<br>
-We use the Filter Pattern to narrow down the relevant logs in the following manner <br>
-`{ ($.Name = DP1) && $.SNMP_Result>=0 }`<br>
-this means we only want logs where the Name is "DP1" and `SNMP_Result` is greater or equal to 0. <br>
-And we should use `$.SNMP_Result` for the Metric Value.<br>
 
 ## Alarm ##
 To set thresholds on each metric we should use the CloudWatch Alarm and point it to a Metric (created by the Metric filter). <br>
