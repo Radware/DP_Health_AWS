@@ -2,7 +2,6 @@ from pysnmp.entity.rfc3413.oneliner import cmdgen
 import time
 import boto3
 import asyncio
-import aiohttp
 
 def lambda_handler(event, context):
     print ("[INFO] Starting DP Health Detector Lambda!")
@@ -13,8 +12,8 @@ async def get_host_list():
     task_list = []
     # Create EC2 client 
     client = boto3.client('ec2', 'us-east-2')
-    # Locate instances with "DefenceProInstance" tag
-    for tag in client.describe_tags(Filters=[{'Name': 'key','Values': ['DefenceProInstance']}])["Tags"]:
+    # Locate instances with "DefenseProInstance" tag
+    for tag in client.describe_tags(Filters=[{'Name': 'key','Values': ['DefenseProInstance']}])["Tags"]:
         # Get instance information 
         instance_info = client.describe_instances(InstanceIds=[tag["ResourceId"]])
         try:
@@ -33,7 +32,8 @@ async def get_host_list():
 async def run_test(host, dpName):
     oid = '.1.3.6.1.4.1.89.35.1.112'
     community = 'public'
-    repeat = 5
+    repeat = 90
+    cloudwatch = boto3.client('cloudwatch')
     for i in range(repeat):
         # Mark estimated time for next iteration
         endtime = int(time.time()) + 10
@@ -52,11 +52,16 @@ async def run_test(host, dpName):
                 print('%s at %s' % ( errorStatus.prettyPrint(),errorIndex and varBinds[int(errorIndex)-1] or '?') )
             else:
                 print("{ \"Description\": \"DefensePro Health Keep-Alive CPU query\", \"Name\": \"%s\", \"DefensePro IP\": \"%s\", \"SNMP_Result\": %s }" % (dpName, host, str(varBinds[0][1])))
-        
+                response = cloudwatch.put_metric_data(
+                    MetricData = [ 
+                        { 'MetricName': 'DP_KeepAlive', 'Dimensions': [
+                            { 'Name': 'DefensePro_Name', 'Value': dpName },
+                            { 'Name': 'DefensePro_IP', 'Value': host }
+                        ],
+                    'Unit': 'None',
+                    'Value': int(varBinds[0][1])
+                    }], Namespace = f'{dpName}_CPU' )
         # Run HTTP Test
-#         async with aiohttp.ClientSession() as session:
-#             scode = await fetch_HTTP_Response(session, url)
-#             print("{ \"Description\": \"DefensePro Health Keep-Alive HTTP Test\", \"Name\": \"%s\", \"DefensePro IP\": \"%s\", \"HTTP_Result\": %s }" % (dpName, host, scode))
 
         if endtime > int(time.time()):
             await asyncio.sleep(endtime-int(time.time()))
