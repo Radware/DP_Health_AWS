@@ -2,6 +2,7 @@ from pysnmp.entity.rfc3413.oneliner import cmdgen
 import time
 import boto3
 import asyncio
+import os
 
 def lambda_handler(event, context):
     print ("[INFO] Starting DP Health Detector Lambda!")
@@ -17,6 +18,9 @@ async def get_host_list():
         # Get instance information 
         instance_info = client.describe_instances(InstanceIds=[tag["ResourceId"]])
         try:
+            if "VpcId" in os.environ and instance_info["Reservations"][0]["Instances"][0]["VpcId"] != os.environ["VpcId"]:
+                print (f'[INFO] found a DefensePro Instance in a different VPC, instance ID = {instance_info["Reservations"][0]["Instances"][0]["InstanceId"]}')
+                continue
             # Loop through the interfaces searching for ETH1 (MGMT)
             for interface in instance_info["Reservations"][0]["Instances"][0]["NetworkInterfaces"]:
                 if "Attachment" in interface and "DeviceIndex" in interface["Attachment"] and interface["Attachment"]["DeviceIndex"] == 1:
