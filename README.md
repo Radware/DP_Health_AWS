@@ -80,6 +80,8 @@ it's recomended to use the "Test" feature once to make sure the Metrics are crea
 
 After making sure script is running as expected, to make sure one lambda will be always up - lambda timeout should be adjusted to 15 minutes.
 
+in order to support multiple VPCs, create an environment variable valled `VpcId` (case sensitive) with the VPC as the Value.
+
 ### Detector Lambda CloudWatch Alarms ###
 CloudWatch Alarm is used for setting thresholds on each of the metrics. <br>
 A separate Alarm shloud be created for each metric (it's recomended to set norification to all Alerts).<br>
