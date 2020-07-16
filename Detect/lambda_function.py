@@ -6,9 +6,10 @@ import os
 
 def lambda_handler(event, context):
     print ("[INFO] Starting DP Health Detector Lambda!")
-    asyncio.run(get_host_list())
+    asyncio.run(get_host_list(context))
+    return
 
-async def get_host_list():
+async def get_host_list(context):
     # Create a list to hold tasks per-dp
     task_list = []
     # Create EC2 client 
@@ -18,7 +19,7 @@ async def get_host_list():
         # Get instance information 
         instance_info = client.describe_instances(InstanceIds=[tag["ResourceId"]])
         try:
-            if "VpcId" in os.environ and instance_info["Reservations"][0]["Instances"][0]["VpcId"] != os.environ["VpcId"]:
+            if instance_info["Reservations"][0]["Instances"][0]["VpcId"] != os.environ["VpcId"]:
                 print (f'[INFO] found a DefensePro Instance in a different VPC, instance ID = {instance_info["Reservations"][0]["Instances"][0]["InstanceId"]}')
                 continue
             # Loop through the interfaces searching for ETH1 (MGMT)
@@ -26,19 +27,18 @@ async def get_host_list():
                 if "Attachment" in interface and "DeviceIndex" in interface["Attachment"] and interface["Attachment"]["DeviceIndex"] == 1:
                     print("[INFO] Found DP with MGMT IP = " + interface["PrivateIpAddress"])
                     # Create a task for running the tests
-                    task_list.append(asyncio.create_task(run_test(interface["PrivateIpAddress"], tag['Value'])))
+                    task_list.append(asyncio.create_task(run_test(context,interface["PrivateIpAddress"], tag['Value'])))
         except Exception as e:
             print(f"[ERROR] unable to find network interface in instance info! instance ID: {tag['ResourceId']}, error: {e} ")
     # execute the test tasks 
     for task in task_list:
         await task
 
-async def run_test(host, dpName):
-    oid = '.1.3.6.1.4.1.89.35.1.112'
+async def run_test(context, host, dpName):
+    oid = '.1.3.6.1.4.1.89.35.1.112.0'
     community = 'public'
-    repeat = 90
     cloudwatch = boto3.client('cloudwatch')
-    for i in range(repeat):
+    while context.get_remaining_time_in_millis() > 1000:
         # Mark estimated time for next iteration
         endtime = int(time.time()) + 10
         
@@ -77,9 +77,8 @@ async def run_test(host, dpName):
                     }], Namespace = f'{dpName}_CPU' )
         # Run HTTP Test
 
-        if endtime > int(time.time()):
+        if endtime > int(time.time()) and context.get_remaining_time_in_millis() > 10000:
             await asyncio.sleep(endtime-int(time.time()))
-
 async def fetch_HTTP_Response(session, url):
     async with session.get(url) as response:
         await response.text()
