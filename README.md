@@ -93,23 +93,43 @@ this Lambda is responsible for:
 3. removal or association of the internet gateway from the `GatewayID` route table (for passing or bypassing the DefensePro)
 
 ### Action Lambda CloudWatch Rules ###
-For performing the acctual bypass operation, use an additional Rule triggering Action Lambda on <b>any</b> alarm change.<br>
+For performing the acctual bypass operation, use an additional Rule triggering Action Lambda on any change of the alarm configured in step [Alarms](#detector-lambda-cloudwatch-alarms) .<br>
+the rule should be `event pattern` and configured with custome event pointing to the alarms, for example:
+```
+{
+  "source": [
+    "aws.cloudwatch"
+  ],
+  "resources": [
+    "arn:aws:cloudwatch:REGION:ACCOUNT-ID:alarm:alarm 1",
+    "arn:aws:cloudwatch:REGION:ACCOUNT-ID:alarm:alarm 2"
+  ],
+  "detail-type": [
+    "CloudWatch Alarm State Change"
+  ]
+}
+```
 
 ### Action Lambda Permissions ###
-In order to oporate the Lambda needs the following permissions:
+In order to oporate the action Lambda function needs the following permissions:
+* Describe Internet Gateways - to fetch internet gateway information 
+* Get and Update lambda function configuration - to modify environment variables in case failback is needed
+* Describe, associate and disasociate route tables - for performing the actual bypass operation 
+
+the following should be included into IAM policy Statements
+
 ```
-    "Effect": "Allow",
-    "Action": [
-        "ec2:DescribeInternetGateways",
-        "logs:CreateLogStream",
-        "ec2:DeleteTags",
-        "ec2:DescribeTags",
-        "ec2:CreateTags",
-        "ec2:DisassociateRouteTable",
-        "logs:CreateLogGroup",
-        "logs:PutLogEvents",
-        "ec2:DescribeRouteTables",
-        "ec2:AssociateRouteTable"
-    ],
-    "Resource": "*"
+        {
+            "Sid": "VisualEditor0",
+            "Effect": "Allow",
+            "Action": [
+                "ec2:DescribeInternetGateways",
+                "lambda:UpdateFunctionConfiguration",
+                "lambda:GetFunctionConfiguration",
+                "ec2:DisassociateRouteTable",
+                "ec2:DescribeRouteTables",
+                "ec2:AssociateRouteTable"
+            ],
+            "Resource": "*"
+        }
 ```
