@@ -19,7 +19,6 @@ def lambda_handler(event, context):
     if "detail" in event and "state" in event["detail"] and "value" in event["detail"]["state"]:
         print(f'State of DP {dpName} \ {dpIP} has changed to {event["detail"]["state"]["value"]}')
         if event["detail"]["state"]["value"] == "ALARM":
-            # environ = lambda_client.get_function_configuration( FunctionName='dp_ha_action_v2')
             response = lambda_client.get_function_configuration( FunctionName = context.function_name )
             # print("got environment Variables")
             if not "Environment" in response or not "Variables" in response["Environment"]:
