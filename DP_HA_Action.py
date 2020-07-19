@@ -57,10 +57,10 @@ def fetch_ids(client, dpName):
     reals_tables=[]
     subnets=[]
     
-    vpcid, public_table, associd = func_tableid_by_tag(client, 'DefenceProTable_'+dpName, 'Public', vpcid)
-    vpcid, gw_tables, associd = func_tableid_by_tag(client, 'DefenceProTable_'+dpName, 'GatewayID', vpcid)
+    vpcid, public_table, associd = func_tableid_by_tag(client, 'DefenceProTable_', 'Public', vpcid)
+    vpcid, gw_tables, associd = func_tableid_by_tag(client, 'DefenceProTable_', 'GatewayID', vpcid)
 
-    response = client.describe_route_tables(Filters=[{'Name': 'tag:DefenceProTable_'+dpName, 'Values': ['Reals']}])
+    response = client.describe_route_tables(Filters=[{'Name': 'tag:DefenceProTable_', 'Values': ['Reals']}])
     for table in response['RouteTables']:
         if 'RouteTableId' in table:
             reals_tables += table["Associations"]
