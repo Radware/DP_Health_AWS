@@ -15,9 +15,9 @@ def lambda_handler(event, context):
         print(f'[ERROR] failed to get DP info! {error=}')
     
     vpcid, public_table, gw_tables, reals_tables, subnets, associd = fetch_ids(client, dpName)
-    # print("finished getting table IDs")
+    print(f"[INFO] finished getting table IDs : {vpcid=}, {public_table=}, {gw_tables=}, {reals_tables=}, {subnets=}, {associd=}")
     if "detail" in event and "state" in event["detail"] and "value" in event["detail"]["state"]:
-        print(f'State of DP {dpName} \ {dpIP} has changed to {event["detail"]["state"]["value"]}')
+        print(f'[INFO] State of DP {dpName} \ {dpIP} has changed to {event["detail"]["state"]["value"]}')
         if event["detail"]["state"]["value"] == "ALARM":
             response = lambda_client.get_function_configuration( FunctionName = context.function_name )
             # print("got environment Variables")
@@ -29,12 +29,12 @@ def lambda_handler(event, context):
             if len(associd) > 1:
                 response = client.disassociate_route_table(AssociationId=associd)
                 environ[dpName+'_GatewayId'] = associd
-                # print("finished disassociating GW route table")
+                print("finished disassociating GW route table")
             value = ""
             for id in reals_tables:
                 if "SubnetId" in id and id["SubnetId"] != "":
                     response = client.disassociate_route_table(AssociationId=id["RouteTableAssociationId"])
-                    # print(f'finished disassociating {id["SubnetId"]} route table')
+                    print(f'finished disassociating {id["SubnetId"]} route table')
                     if len(value) > 0:
                         value += environ[dpName+'_FailBackSubnets']+","
                     environ[dpName+'_FailBackSubnets'] = value+id["RouteTableAssociationId"]
@@ -43,7 +43,7 @@ def lambda_handler(event, context):
         
             for subnet in subnets:
                 response = client.associate_route_table(RouteTableId=public_table, SubnetId=subnet)
-                # print(f"finished disassociating {subnet} route table")
+                print(f"finished disassociating {subnet} route table")
         else:
             print(event)
     else:
