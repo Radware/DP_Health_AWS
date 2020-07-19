@@ -39,7 +39,7 @@ def lambda_handler(event, context):
                     if len(value) > 0:
                         value += environ[dpName+'_FailBackSubnets']+","
                     environ[dpName+'_FailBackSubnets'] = value+id["RouteTableAssociationId"]
-            response = lambda_client.update_function_configuration( FunctionName='dp_ha_action_v2', Environment={ 'Variables': environ })
+            response = lambda_client.update_function_configuration( FunctionName = context.function_name, Environment={ 'Variables': environ })
             # print("finished updating environment Variables")
         
             for subnet in subnets:
