@@ -76,6 +76,7 @@ def fetch_ids(client, dpName):
 def func_tableid_by_tag(client, tag_name, tag_value, vpcid):
     response = client.describe_route_tables(Filters=[{'Name': 'tag:'+tag_name, 'Values': [tag_value]}])
     associd = ""
+    tableid = ""
     if 'RouteTables' in response and len(response['RouteTables']) == 1:
         if 'RouteTableId' in response['RouteTables'][0]:
             tableid=response['RouteTables'][0]['RouteTableId']
