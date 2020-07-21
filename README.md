@@ -1,7 +1,7 @@
 # DP_Health_AWS
 DefensePro Health testing for AWS.
 
-## Table Of Contents ###
+## Table of Contents ###
 - [Description](#description )
 - [Detector Lambda](#detector-lambda)
   * [Subnet](#detector-lambda-subnet)
@@ -18,9 +18,9 @@ DefensePro Health testing for AWS.
 This repository holds the Lambda functions as well as their requirements for performing automatic bypass of DefensePro in AWS environment.
 Before we begin, this solution assumes the following:
 * All relevant objects are in the same VPC
-* Protected objects (servers) are in a subnet which routing table points to the ENI of DefensePro - we will refer this routing table as `Reals`
-* There is a routing table with the Internet Gateway assigned as the `Edge Gateway` with a route sending the Protected objects\their entire subnet to ENI of DefensePro - we will refer this routing table as `GatewayID`
-* All Relevant route tables has a tag named `DefenseProTable`, the value represents the table type (F.E: for protected objects route table it would be `Reals`)
+* Protected objects (servers) are in a subnet which the routing table points to the ENI of DefensePro. We refer to this routing table as `Reals`
+* There is a routing table with the Internet Gateway assigned as the `Edge Gateway` with a route sending the Protected objects\their entire subnet to ENI of DefensePro. We refer to this routing table as `GatewayID`
+* All Relevant route tables have a tag named `DefenseProTable`, The value represents the table type (For example, for protected objects route table it would be `Reals`)
 
 ## Detector Lambda ##
 The code, as well as the requirements are in `Detect` folder. This Lambda is responsible for:
@@ -33,21 +33,22 @@ The code, as well as the requirements are in `Detect` folder. This Lambda is res
 
 ### Detector Lambda Subnet ###
 Detector Lambda is going to require access to AWS API from within the VPC (more details in [Detector Lambda Endpoints](#detector-lambda-endpoints)).<br>
-to make sure Lambda doesn't effect any other instances, it's recommended to use a separate subnet for this Lambda.
+To make sure Lambda doesn't affect any other instances, it is recommended to use a separate subnet for this Lambda.
 
 ### Detector Lambda Endpoints ###
-Detector Lambda performs several operations in AWS API (more details in [Detector Lambda Permissions](#detector-lambda-permissions))<br>
-In order to gain access to AWS API from within the VPC Lambda requires an Endpoing matching the operation type.<br><br>
-<b>Note:</b> in order to use Endpoints, DNS resolution and DNS hostname resolution must be enabled in the VPC.<br>
-Create 2 endpoints:
+Detector Lambda performs several operations in AWS API. (For more details, see [Detector Lambda Permissions](#detector-lambda-permissions))<br>
+In order to gain access to AWS API from within the VPC, Lambda requires an endpoint matching the operation type.
+
+<b>Note:</b> In order to use endpoints, DNS resolution and DNS hostname resolution must be enabled in the VPC.<br>
+Create two endpoints:
 1. com.amazonaws.us-east-2.ec2 - for the EC2 related operations
 2. com.amazonaws.us-east-2.monitoring - for posting metric data into CloudWatch
 
-each endpoint should be attached to the Lambda VPC and a security group allowes Lambda to send the APIs .
+Each endpoint should be attached to the Lambda VPC and a security group allows Lambda to send the APIs .
 
 ### Detector Lambda CloudWatch Rule ### 
-Detector Lambda needs scheduled CloudWach rule, the rule will trigger Lambda function every 15 minutes
-use the following expresion `0/15 * ? * * *` 
+Detector Lambda needs scheduled CloudWach rule. The rule will trigger a Lambda function every 15 minutes. <br>
+Use the following expression `0/15 * ? * * *` 
 
 ### Detector Lambda Permissions ###
 The Lambda needs the following permissions:
@@ -56,7 +57,7 @@ The Lambda needs the following permissions:
 * Describe Instance - for getting instance Interfaces information
 * Put Metric Data - for posting results into CloudWatch Metrics
 
-the following should be included into IAM policy Statements
+The following should be included into IAM policy statements
 ```
         {
             "Sid": "VisualEditor0",
@@ -74,35 +75,34 @@ the following should be included into IAM policy Statements
 ```
 
 ### Detector Lambda Upload and Test ###
-To use the Detector Lambda all content of "Detect" directory should be uploaded into the AWS Lambda, it's recomended to create a ZIP file with the content and upload it.<br>
-As the Lambda doesn't require any input, any test event configuration will trigger the script.
-it's recomended to use the "Test" feature once to make sure the Metrics are created as well as making sure script is working as expected.
+To use the Detector Lambda all content of "Detect" directory should be uploaded into the AWS Lambda. It is recommended to create and upload a ZIP file with the content.<br>
+As the Lambda doesn't require any input, any test event configuration will trigger the script. It is recommended to use the "Test" feature once to make sure the Metrics are created as well as making sure the script is working as expected.
 
-After making sure script is running as expected, to make sure one lambda will be always up - lambda timeout should be adjusted to 15 minutes.
+After making sure script is running as expected, to make sure one Lambda will be always up, Lambda timeout should be adjusted to 15 minutes.
 
-In order to oporate in an environment with more than one DefernsePro in different VPC - create an environment variable valled `VpcId` (case sensitive) with the VPC as the Value.
+In order to operate in an environment with more than one DefernsePro in different VPCs, create an environment variable valled VpcId (case sensitive) with the VPC as the Value.
 
 ### Detector Lambda CloudWatch Alarms ###
-CloudWatch Alarm is used for setting thresholds on each of the metrics. <br>
-A separate Alarm shloud be created for each metric (it's recomended to set norification to all Alerts).<br>
+CloudWatch Alarm is used for setting thresholds on each of the metrics.<br>
+A separate Alarm should be created for each metric. (It is recommended to set notification to all Alerts.).
 
 ## Action Lambda ## 
-this Lambda is responsible for:
+This Lambda is responsible for:
 1. discovering all relevant route tables (based on tags)
-2. replace association between Public and Protected object route table (for passing or bypassing the DefensePro)
-3. removal or association of the internet gateway from the `GatewayID` route table (for passing or bypassing the DefensePro)
+2. replacing association between Public and Protected object route table (for passing or bypassing the DefensePro)
+3. removing or associating of the internet gateway from the `GatewayID` route table (for passing or bypassing the DefensePro)
 
 ### Action Lambda CloudWatch Rules ###
-For performing the acctual bypass operation, use an additional Rule triggering Action Lambda on any change of the alarm configured in step [Alarms](#detector-lambda-cloudwatch-alarms) .<br>
-the rule should be `event pattern` and configured with custome event pointing to the alarms, for example:
+For performing the actual bypass operation, use an additional Rule triggering Action Lambda on any change of the alarm configured in step [Alarms](#detector-lambda-cloudwatch-alarms) .<br>
+The rule should be `event pattern` and configured with custom event pointing to the alarms, for example:
 ```
 {
   "source": [
     "aws.cloudwatch"
   ],
   "resources": [
-    "arn:aws:cloudwatch:REGION:ACCOUNT-ID:alarm:alarm 1",
-    "arn:aws:cloudwatch:REGION:ACCOUNT-ID:alarm:alarm 2"
+    "arn:aws:cloudwatch:REGION:ACCOUNT-ID:alarm:ALARM 1 NAME",
+    "arn:aws:cloudwatch:REGION:ACCOUNT-ID:alarm:ALARM 2 NAME"
   ],
   "detail-type": [
     "CloudWatch Alarm State Change"
@@ -111,12 +111,12 @@ the rule should be `event pattern` and configured with custome event pointing to
 ```
 
 ### Action Lambda Permissions ###
-In order to oporate the action Lambda function needs the following permissions:
+In order to operate the action Lambda function needs the following permissions:
 * Describe Internet Gateways - to fetch internet gateway information 
 * Get and Update lambda function configuration - to modify environment variables in case failback is needed
-* Describe, associate and disasociate route tables - for performing the actual bypass operation 
+* Describe, associate and disassociate route tables - for performing the actual bypass operation 
 
-the following should be included into IAM policy Statements
+The following should be included into IAM policy statements
 
 ```
         {
