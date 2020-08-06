@@ -75,7 +75,15 @@ async def run_test(context, host, dpName):
                     'Unit': 'None',
                     'Value': int(varBinds[0][1])
                     }], Namespace = f'{dpName}_CPU' )
-        # Run HTTP Test
+                response = cloudwatch.put_metric_data(
+                    MetricData = [ 
+                        { 'MetricName': 'DP_KeepAlive_Timeouts', 'Dimensions': [
+                            { 'Name': 'DefensePro_Name', 'Value': dpName },
+                            { 'Name': 'DefensePro_IP', 'Value': host }
+                        ],
+                    'Unit': 'None',
+                    'Value': 0
+                    }], Namespace = f'{dpName}_CPU' )
 
         if endtime > int(time.time()) and context.get_remaining_time_in_millis() > 10000:
             await asyncio.sleep(endtime-int(time.time()))
