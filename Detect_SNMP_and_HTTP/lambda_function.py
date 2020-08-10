@@ -48,7 +48,7 @@ async def run_test(context, host, dpName, url):
     oid = '.1.3.6.1.4.1.89.35.1.112.0'
     community = 'public'
     cloudwatch = boto3.client('cloudwatch')
-    while context.get_remaining_time_in_millis() > 1000:
+    while context.get_remaining_time_in_millis() > 3000:
         # Mark estimated time for next iteration
         endtime = int(time.time()) + 10
         
@@ -57,6 +57,7 @@ async def run_test(context, host, dpName, url):
         errorIndication, errorStatus, errorIndex, varBinds = cmdGen.getCmd(
         cmdgen.CommunityData(community),
         cmdgen.UdpTransportTarget((host, 161), timeout=0, retries=0),oid)
+        
 
         # Check for errors and print out results
         if errorIndication:
@@ -82,6 +83,7 @@ async def run_test(context, host, dpName, url):
                 'Value': 0
                 }], Namespace = f'{dpName}_CPU' )
 
+
             if errorStatus:
                 print('%s at %s' % ( errorStatus.prettyPrint(),errorIndex and varBinds[int(errorIndex)-1] or '?') )
             else:
@@ -96,15 +98,20 @@ async def run_test(context, host, dpName, url):
                     'Value': int(varBinds[0][1])
                     }], Namespace = f'{dpName}_CPU' )
 
-        # Run HTTP Test
-        async with aiohttp.ClientSession() as session:
-            scode = await fetch_HTTP_Response(session, url)
-            print(f'{{ "Description": "DefensePro Health Keep-Alive CPU query", "Name": "{dpName}", "DefensePro IP": "{host}", "Tested URL": "{url}" "HTTP_Result": {scode} }}')
-            if scode in [200]:
-                httpres = 0
-            else:
-                httpres = 10
 
+        # Run HTTP Test
+        timeout = aiohttp.ClientTimeout(total=1.5)
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            try:
+                scode = await fetch_HTTP_Response(session, url)
+                print(f'{{ "Description": "DefensePro Health Keep-Alive CPU query", "Name": "{dpName}", "DefensePro IP": "{host}", "Tested URL": "{url}" "HTTP_Result": {scode} }}')
+                if scode in [200]:
+                    httpres = 0
+                else:
+                    httpres = 10
+            except Exception as err:
+                print(f'{{ "Description": "DefensePro Health Keep-Alive CPU query", "Name": "{dpName}", "DefensePro IP": "{host}", "Tested URL": "{url}" "HTTP_Result": "{err}" }}')
+                httpres = 10
             response = cloudwatch.put_metric_data(
                 MetricData = [ 
                     { 'MetricName': 'DP_KeepAlive_Results', 'Dimensions': [
