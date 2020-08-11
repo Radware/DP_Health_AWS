@@ -21,6 +21,7 @@ Before we begin, this solution assumes the following:
 * Protected objects (servers) are in a subnet which the routing table points to the ENI of DefensePro. We refer to this routing table as `Reals`
 * There is a routing table with the Internet Gateway assigned as the `Edge Gateway` with a route sending the Protected objects\their entire subnet to ENI of DefensePro. We refer to this routing table as `GatewayID`
 * All Relevant route tables have a tag named `DefenseProTable`, The value represents the table type (For example, for protected objects route table it would be `Reals`)
+* For the HTTP, every DefensePro instance should have a tag `DefenseProHealthURL` containing the URL lambda will use for testing the DefensePro instances. Make sure Lambda subnet has a route forcing URL destination to DefensePro NIC 
 
 ## Detector Lambda ##
 The code, as well as the requirements are in `Detect` folder. This Lambda is responsible for:
