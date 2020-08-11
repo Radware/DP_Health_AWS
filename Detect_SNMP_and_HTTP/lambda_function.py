@@ -60,43 +60,15 @@ async def run_test(context, host, dpName, url):
         
 
         # Check for errors and print out results
+        snmpres = 0
         if errorIndication:
             print(f'{{ "Description": "DefensePro Health Keep-Alive CPU query", "Name": "{dpName}", "DefensePro IP": "{host}", "SNMP Error": {errorIndication} }}')
-            response = cloudwatch.put_metric_data(
-                MetricData = [ 
-                    { 'MetricName': 'DP_KeepAlive_Timeouts', 'Dimensions': [
-                        { 'Name': 'DefensePro_Name', 'Value': dpName },
-                        { 'Name': 'DefensePro_IP', 'Value': host }
-                    ],
-                'Unit': 'None',
-                'Value': 100
-                }], Namespace = f'{dpName}_CPU' )
-
         else:
-            response = cloudwatch.put_metric_data(
-                MetricData = [ 
-                    { 'MetricName': 'DP_KeepAlive_Timeouts', 'Dimensions': [
-                        { 'Name': 'DefensePro_Name', 'Value': dpName },
-                        { 'Name': 'DefensePro_IP', 'Value': host }
-                    ],
-                'Unit': 'None',
-                'Value': 0
-                }], Namespace = f'{dpName}_CPU' )
-
-
             if errorStatus:
                 print('%s at %s' % ( errorStatus.prettyPrint(),errorIndex and varBinds[int(errorIndex)-1] or '?') )
             else:
-                print(f'{{ "Description": "DefensePro Health Keep-Alive CPU query", "Name": "{dpName}", "DefensePro IP": "{host}", "SNMP_Result": {str(varBinds[0][1])} }}')
-                response = cloudwatch.put_metric_data(
-                    MetricData = [ 
-                        { 'MetricName': 'DP_KeepAlive_Results', 'Dimensions': [
-                            { 'Name': 'DefensePro_Name', 'Value': dpName },
-                            { 'Name': 'DefensePro_IP', 'Value': host }
-                        ],
-                    'Unit': 'None',
-                    'Value': int(varBinds[0][1])
-                    }], Namespace = f'{dpName}_CPU' )
+                snmpres = int(varBinds[0][1])
+                print(f'{{ "Description": "DefensePro Health Keep-Alive CPU query", "Name": "{dpName}", "DefensePro IP": "{host}", "SNMP Result": {snmpres} }}')
 
 
         # Run HTTP Test
@@ -112,15 +84,21 @@ async def run_test(context, host, dpName, url):
             except Exception as err:
                 print(f'{{ "Description": "DefensePro Health Keep-Alive CPU query", "Name": "{dpName}", "DefensePro IP": "{host}", "Tested URL": "{url}" "HTTP_Result": "{err}" }}')
                 httpres = 10
-            response = cloudwatch.put_metric_data(
-                MetricData = [ 
-                    { 'MetricName': 'DP_KeepAlive_Results', 'Dimensions': [
-                        { 'Name': 'DefensePro_Name', 'Value': dpName },
-                        { 'Name': 'DefensePro_IP', 'Value': host }
-                    ],
-                'Unit': 'None',
-                'Value': httpres
-                }], Namespace = f'{dpName}_HTTP' )
+        
+        if snmpres > 80 or httpres == 10:
+            lambdares = 10
+        else:
+            lambdares = 0
+
+        response = cloudwatch.put_metric_data(
+            MetricData = [ 
+                { 'MetricName': 'DP_KeepAlive_Results', 'Dimensions': [
+                    { 'Name': 'DefensePro_Name', 'Value': dpName },
+                    { 'Name': 'DefensePro_IP', 'Value': host }
+                ],
+            'Unit': 'None',
+            'Value': lambdares
+            }], Namespace = f'{dpName}' )
 
         if endtime > int(time.time()) and context.get_remaining_time_in_millis() > 10000:
             await asyncio.sleep(endtime-int(time.time()))
