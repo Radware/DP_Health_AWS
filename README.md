@@ -42,8 +42,8 @@ In order to gain access to AWS API from within the VPC, Lambda requires an endpo
 
 <b>Note:</b> In order to use endpoints, DNS resolution and DNS hostname resolution must be enabled in the VPC.<br>
 Create two endpoints:
-1. com.amazonaws.us-east-2.ec2 - for the EC2 related operations
-2. com.amazonaws.us-east-2.monitoring - for posting metric data into CloudWatch
+1. com.amazonaws.REGION.ec2 - for the EC2 related operations
+2. com.amazonaws.REGION.monitoring - for posting metric data into CloudWatch
 
 Each endpoint should be attached to the Lambda VPC and a security group allows Lambda to send the APIs .
 
