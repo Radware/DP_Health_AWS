@@ -27,21 +27,22 @@ Before we begin, this solution assumes the following:
 ## Detector Lambda ##
 The Detect Lambda has two flavors, one is SNMP only and the other is combination of SNMP with an HTTP/S request through DefensePro.
 
-SNMP only flavor script as well as the requirements are in `Detect_SNMP` directory, This Lambda is responsible for:
+<b>SNMP only flavor:</b><br>
+The script as well as the requirements are in `Detect_SNMP` directory, This Lambda is responsible for:
 1. Discovering the DefensePro devices based on a TAG `DefenseProInstance`
 2. Quarrying the DefensePro devices with an SNMP request to the MGMT interface
 3. Post logs into CloudWatch log group.
 4. Post results into CloudWatch metric.
 
-
-SNMP + HTTP flavor script as well as the requirements are in `Detect_SNMP_and_HTTP` directory, This Lambda is responsible for:
+<b>SNMP + HTTP flavor:</b><br>
+The script as well as the requirements are in `Detect_SNMP_and_HTTP` directory, This Lambda is responsible for:
 1. Discovering the DefensePro devices based on a TAG `DefenseProInstance`
 2. Quarrying the DefensePro devices with an SNMP request to the MGMT interface
 2. Issue an HTTP/S request to a URL provided in `DefenseProHealthURL` tag on the DefensePro instance
 3. Post logs into CloudWatch log group.
 4. Post results into CloudWatch metric.
 
-<b>Results:</b>
+<b>Results:</b><br>
 SNMP only creates two separate metrics - one containing the SNMP result and the other is an integer (0 if there was no timeout and 100 in case SNMP query timedout).<br>
 SNMP + HTTP creates one metric only an integer, 0 for doing nothing and 10 for triggering the Action (if SNMP result is above 80 <b>or</b> HTTP/S query has failed)
 
