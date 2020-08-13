@@ -13,6 +13,7 @@ DefensePro Health testing for AWS.
 - [Action Lambda](#action-lambda)
   * [Permissions](#action-lambda-permissions)
   * [CloudWatch Rules](#action-lambda-cloudwatch-rules)
+  * [Upload](#action-lambda-upload)
 
 ## Description ##
 This repository holds the Lambda functions as well as their requirements for performing automatic bypass of DefensePro in AWS environment.
@@ -24,13 +25,26 @@ Before we begin, this solution assumes the following:
 * For the HTTP, every DefensePro instance should have a tag `DefenseProHealthURL` containing the URL lambda will use for testing the DefensePro instances. Make sure Lambda subnet has a route forcing URL destination to DefensePro NIC 
 
 ## Detector Lambda ##
-The code, as well as the requirements are in `Detect` folder. This Lambda is responsible for:
+The Detect Lambda has two flavors, one is SNMP only and the other is combination of SNMP with an HTTP/S request through DefensePro.
+
+SNMP only flavor script as well as the requirements are in `Detect_SNMP` directory, This Lambda is responsible for:
 1. Discovering the DefensePro devices based on a TAG `DefenseProInstance`
 2. Quarrying the DefensePro devices with an SNMP request to the MGMT interface
-3. Post results into CloudWatch log group.
+3. Post logs into CloudWatch log group.
 4. Post results into CloudWatch metric.
 
-<b>Note:</b> For achieving the above - this Lambda must be located in the same VPC as the DefensePro.
+
+SNMP + HTTP flavor script as well as the requirements are in `Detect_SNMP_and_HTTP` directory, This Lambda is responsible for:
+1. Discovering the DefensePro devices based on a TAG `DefenseProInstance`
+2. Quarrying the DefensePro devices with an SNMP request to the MGMT interface
+2. Issue an HTTP/S request to a URL provided in `DefenseProHealthURL` tag on the DefensePro instance
+3. Post logs into CloudWatch log group.
+4. Post results into CloudWatch metric.
+
+<b>Note:</b> 
+* This Lambda must be located in the same VPC as the DefensePro.
+* For the HTTP/S test to be effective, the Lambda subnet must route the HTTP/S destination to DefensePro NIC, thus making sure request is routed through DefensePro.
+
 
 ### Detector Lambda Subnet ###
 Detector Lambda is going to require access to AWS API from within the VPC (more details in [Detector Lambda Endpoints](#detector-lambda-endpoints)).<br>
@@ -42,7 +56,7 @@ In order to gain access to AWS API from within the VPC, Lambda requires an endpo
 
 <b>Note:</b> In order to use endpoints, DNS resolution and DNS hostname resolution must be enabled in the VPC.<br>
 Create two endpoints:
-1. com.amazonaws.REGION.ec2 - for the EC2 related operations
+1. com.amazonaws.REGION.ec2 - for the EC2 related operations 
 2. com.amazonaws.REGION.monitoring - for posting metric data into CloudWatch
 
 Each endpoint should be attached to the Lambda VPC and a security group allows Lambda to send the APIs .
@@ -76,8 +90,9 @@ The following should be included into IAM policy statements
 ```
 
 ### Detector Lambda Upload and Test ###
-To use the Detector Lambda all content of "Detect" directory should be uploaded into the AWS Lambda. It is recommended to create and upload a ZIP file with the content.<br>
-As the Lambda doesn't require any input, any test event configuration will trigger the script. It is recommended to use the "Test" feature once to make sure the Metrics are created as well as making sure the script is working as expected.
+To use the Detector Lambda all content of "Detect_SNMP_and_HTTP" directory should be uploaded into the AWS Lambda. It is recommended to create and upload a ZIP file with the content.<br>
+As the Lambda doesn't require any input, any test event configuration will trigger the script. <br>
+It is recommended to use the "Test" feature once to make sure the Metrics are created as well as making sure the script is working as expected.
 
 After making sure script is running as expected, to make sure one Lambda will be always up, Lambda timeout should be adjusted to 15 minutes.
 
@@ -134,3 +149,6 @@ The following should be included into IAM policy statements
             "Resource": "*"
         }
 ```
+
+### Action Lambda Upload ###
+Unlike the Detect, action lambda uses builtin modules only, hence to use the Action Lambda only the `DP_HA_Action.py` should be uploaded to AWS Lambda.<br>
