@@ -41,8 +41,13 @@ SNMP + HTTP flavor script as well as the requirements are in `Detect_SNMP_and_HT
 3. Post logs into CloudWatch log group.
 4. Post results into CloudWatch metric.
 
+<b>Results:</b>
+SNMP only creates two separate metrics - one containing the SNMP result and the other is an integer (0 if there was no timeout and 100 in case SNMP query timedout).<br>
+SNMP + HTTP creates one metric only an integer, 0 for doing nothing and 10 for triggering the Action (if SNMP result is above 80 <b>or</b> HTTP/S query has failed)
+
 <b>Note:</b> 
 * This Lambda must be located in the same VPC as the DefensePro.
+* CloudWatch rule should be created for each metric (For more details, see [CloudWatch Rule](#detector-lambda-cloudwatch-rule))
 * For the HTTP/S test to be effective, the Lambda subnet must route the HTTP/S destination to DefensePro NIC, thus making sure request is routed through DefensePro.
 
 
