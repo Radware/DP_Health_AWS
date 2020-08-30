@@ -25,6 +25,9 @@ def lambda_handler(event, context):
                 environ = {}
             else:
                 environ = response["Environment"]["Variables"]
+
+            subnets.remove(environ['LambdaSubnetId'])
+
             # Remove gateway association from the route-table
             if len(associd) > 1:
                 response = client.disassociate_route_table(AssociationId=associd)
@@ -32,7 +35,7 @@ def lambda_handler(event, context):
                 print("finished disassociating GW route table")
             value = ""
             for id in reals_tables:
-                if "SubnetId" in id and id["SubnetId"] != "":
+                if "SubnetId" in id and id["SubnetId"] != "" and id["SubnetId"] != environ['LambdaSubnetId']:
                     response = client.disassociate_route_table(AssociationId=id["RouteTableAssociationId"])
                     print(f'finished disassociating {id["SubnetId"]} route table')
                     if len(value) > 0:
