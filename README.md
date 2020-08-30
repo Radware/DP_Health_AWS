@@ -138,7 +138,7 @@ In order to operate the action Lambda function needs the following permissions:
 * Get and Update lambda function configuration - to modify environment variables in case failback is needed
 * Describe, associate and disassociate route tables - for performing the actual bypass operation 
 
-The following should be included into IAM policy statements
+The following should be included in IAM policy statements
 
 ```
         {
@@ -158,3 +158,4 @@ The following should be included into IAM policy statements
 
 ### Action Lambda Upload ###
 Unlike the Detect, action lambda uses builtin modules only, hence to use the Action Lambda only the `DP_HA_Action.py` should be uploaded to AWS Lambda.<br>
+To make sure the Lambda subnet is skipped when performing route table changes, the lambda expects an environment variable `LambdaSubnetId` holding the ID of the detector lambda.
